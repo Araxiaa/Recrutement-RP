@@ -470,7 +470,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Erreur Discord: ${response.statusText}`);
+                    throw new Error(`Erreur Discord: ${response.status} ${response.statusText || '(pas de détails)'}`);
                 }
             }
 
