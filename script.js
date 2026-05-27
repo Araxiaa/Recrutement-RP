@@ -1,283 +1,689 @@
 document.addEventListener("DOMContentLoaded", function () {
     
     // ==========================================
-    // 0. CONFIGURATION DE TON URL GOOGLE
+    // CONFIGURATION DES WEBHOOKS DISCORD
     // ==========================================
-    const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMKAoZL8IH9MyyaSV1bz0HtDd4z6ZFfwqc0jABfBh0zHzIYx40sPInshGtKmufxiO4JA/exec"; 
+    const DISCORD_WEBHOOK_STAFF = "https://discord.com/api/webhooks/1509242254567673989/waPgtJzIlHqB48ZFa3xA3Tz0RC2HRbJknIGY-Akf-L9LU4cGVm5jloBF-BM7AEshSFdl";
+    const DISCORD_WEBHOOK_HAUT_RANG = "https://discord.com/api/webhooks/1509242254567673989/waPgtJzIlHqB48ZFa3xA3Tz0RC2HRbJknIGY-Akf-L9LU4cGVm5jloBF-BM7AEshSFdl";
+    const DISCORD_WEBHOOK_GESTION = "https://discord.com/api/webhooks/1509242254567673989/waPgtJzIlHqB48ZFa3xA3Tz0RC2HRbJknIGY-Akf-L9LU4cGVm5jloBF-BM7AEshSFdl";
 
     // ==========================================
-    // 1. SYSTÈME DE VÉRIFICATION DES STATUTS (OUVERT/FERMÉ)
+    // DICTIONNAIRE DE TRADUCTION DES QUESTIONS
     // ==========================================
-    // Si on est sur l'index, on enregistre l'état des recrutements
-    if (document.getElementById('card-staff')) {
-        const etatStaff = document.querySelector('#card-staff .badge').classList.contains('open') ? 'ouvert' : 'ferme';
-        const etatHR = document.querySelector('#card-haut-rang .badge').classList.contains('open') ? 'ouvert' : 'ferme';
-        const etatGestion = document.querySelector('#card-gestion .badge').classList.contains('open') ? 'ouvert' : 'ferme';
-        
-        localStorage.setItem('status_staff', etatStaff);
-        localStorage.setItem('status_haut-rang', etatHR);
-        localStorage.setItem('status_gestion', etatGestion);
+    const questionLabels = {
+        // STAFF
+        "pseudo": "Pseudo Discord",
+        "anciennete": "Ancienneté sur le serveur",
+        "roles": "Rôles visés",
+        "age": "Âge",
+        "dispo": "Disponibilité hebdomadaire",
+        "experience": "Expérience staff antérieure",
+        "experience_details": "Détails expérience antérieure",
+        "q7": "Gestion des conflits",
+        "q8": "Réaction aux critiques",
+        "q9": "Motivation pour rejoindre le staff",
+        "q10": "Compréhension du rôle staff",
+        "notes_sup": "Notes supplémentaires",
+        "accept_rules": "Acceptation du règlement",
+        "accept_sincerity": "Confirmé sincérité",
+        // HELPER spécifiques
+        "helper_1": "Question Helper 1",
+        "helper_2": "Question Helper 2",
+        "helper_3": "Question Helper 3",
+        "helper_4": "Question Helper 4",
+        // CORRECTEUR spécifiques
+        "correcteur_1": "Question Correcteur 1",
+        "correcteur_2": "Question Correcteur 2",
+        "correcteur_3": "Question Correcteur 3",
+        "correcteur_4": "Question Correcteur 4",
+        // GENETICIEN spécifiques
+        "geneticien_1": "Niveau connaissance génétique féline",
+        "geneticien_2": "Origine des connaissances",
+        "geneticien_3": "Gestion pelage impossible",
+        "geneticien_4": "Communication concepts complexes",
+        // NARRATEUR spécifiques
+        "narrateur_1": "Idée événement narratif",
+        "narrateur_2": "Gestion événement imprévu",
+        "narrateur_3": "Équilibre événement narratif",
+        "narrateur_4": "Gestion membre impacté",
+        // PNJ spécifiques
+        "pnj_1": "Organisation PNJ surpeuplé",
+        "pnj_2": "Gestion doublons familles",
+        "pnj_3": "Variété tâches PNJ",
+        "pnj_4": "Lore développé empiétant",
+        // VEILLEUR spécifiques
+        "veilleur_1": "Planification transition saison",
+        "veilleur_2": "Rédaction immersive",
+        "veilleur_3": "Événement météo urgent",
+        "veilleur_4": "Coordination Bâtisseurs",
+        // BATISSEUR spécifiques
+        "batisseur_1": "Modification territoriale incohérente",
+        "batisseur_2": "Gestion cartes et territoires",
+        "batisseur_3": "Lieu caché découvert",
+        "batisseur_4": "Cohérence modifications territoriales",
+
+        // GESTION
+        "gest_pseudo": "Pseudo Discord",
+        "gest_anciennete": "Ancienneté sur le serveur",
+        "role_gestion_vise": "Rôle de gestion visé",
+        "gest_age": "Âge",
+        "gest_dispo": "Disponibilité hebdomadaire",
+        "gest_experience": "Expérience gestion antérieure",
+        "gest_experience_details": "Détails expérience antérieure",
+        "gest_rigueur": "Rigueur tâches répétitives",
+        "gest_q8": "Amélioration personnelle",
+        "gest_q9": "Motivation rôle gestion",
+        "gest_q10": "Différence gestion/staff",
+        "gest_q11": "Gestion contestation décision",
+        "gest_autonomie": "Confort travail autonome",
+        "gest_q13": "Organisation tâches en suspens",
+        "gest_notes_sup": "Notes supplémentaires",
+        "gest_accept_rules": "Acceptation du règlement",
+        "gest_accept_distinction": "Confirmé distinction gestion/staff",
+        "gest_accept_sincerity": "Confirmé sincérité",
+        // SCRIBE spécifiques
+        "scribe_1": "Mise à jour fiches régulière",
+        "scribe_2": "Contact joueur pas à jour",
+        "scribe_3": "Suivi tableaux/listes",
+        "scribe_4": "Gestion contestation PV",
+        // INTENDANT spécifiques
+        "intendant_1": "Gestion technique Discord",
+        "intendant_2": "Archivage salon fiche",
+        "intendant_3": "Priorisation demandes",
+        "intendant_4": "Clarté architecture serveur",
+        // PASSEUR spécifiques
+        "passeur_1": "Suivi transfert Archives",
+        "passeur_2": "Discrétion infos sensibles",
+        "passeur_3": "Gestion deuil joueur",
+        "passeur_4": "Suivi aucune fiche oubliée",
+
+        // HAUT RANG
+        "hr_pseudo": "Pseudo Discord",
+        "experience_rp": "Expérience RP écrit",
+        "ancien_hr": "Expérience haut rang antérieur",
+        "ancien_hr_details": "Détails expérience antérieure",
+        "hr_dispo": "Disponibilité hebdomadaire",
+        "conflit_narratif": "Gestion conflits narratifs",
+        "critique_staff": "Réaction critiques staff",
+        "rang_vise": "Rang visé",
+        "clan_vise": "Clan concerné",
+        "nom_oc": "Nom complet du OC",
+        "mots_cles_oc": "Mots clés caractère",
+        "motivation_oc": "Motivation grande du OC",
+        "faiblesse_oc": "Plus grande faiblesse du OC",
+        "silence_ancetres": "Positionnement silence Clan des Étoiles",
+        "hr_notes_sup": "Notes supplémentaires",
+        "hr_accept_rules": "Acceptation du règlement",
+        "hr_accept_sincerity": "Confirmé sincérité",
+        // CHEF spécifiques
+        "chef_1": "Relations autres clans",
+        "chef_2": "Décision rapide sans lieutenant",
+        "chef_3": "Gestion remise en question publique",
+        "chef_4": "Vision pour les prochaines saisons",
+        // LIEUTENANT spécifiques
+        "lieutenant_1": "Rôle du lieutenant",
+        "lieutenant_2": "Réaction décision désaccord",
+        "lieutenant_3": "Organisation patrouilles clan affaibli",
+        "lieutenant_4": "Chef absent, menace à la frontière",
+        // GUERISSEUR spécifiques
+        "guerisseur_1": "Perception rôle silence Clan des Étoiles",
+        "guerisseur_2": "Choix entre deux blessés graves",
+        "guerisseur_3": "Guerrier refuse soins",
+        "guerisseur_4": "Connaissances herboristerie",
+        // APPRENTI GUERISSEUR spécifiques
+        "app_guerisseur_1": "Attirance médecine",
+        "app_guerisseur_2": "Erreur dosage patient",
+        "app_guerisseur_3": "Relation avec mentor",
+        "app_guerisseur_4": "Code guérisseur compagnon/petits"
+    };
+
+    // ==========================================
+    // SAUVEGARDE ET SYNC DES ACCÈS (localStorage)
+    // ==========================================
+    if (localStorage.getItem('session_staff_open') === null) {
+        localStorage.setItem('session_staff_open', 'true'); 
+    }
+    if (localStorage.getItem('session_gestion_open') === null) {
+        localStorage.setItem('session_gestion_open', 'false'); 
     }
 
-    // Fonction pour bloquer l'accès à un formulaire si fermé
-    function verifierVerrouillageFormulaire(typeFormulaire, idFormulaire) {
-        const formElement = document.getElementById(idFormulaire);
-        if (!formElement) return;
+    function rafraichirTouteLaPageIndex() {
+        const staffEstOuvert = localStorage.getItem('session_staff_open') === 'true';
+        const gestionEstOuvert = localStorage.getItem('session_gestion_open') === 'true';
 
-        const statut = localStorage.getItem(`status_${typeFormulaire}`) || 'ouvert'; // Par défaut ouvert si pas passé par l'index
-        
-        if (statut === 'ferme') {
-            // On crée un panneau d'alerte à la place du formulaire
-            const alertDiv = document.createElement('div');
-            alertDiv.className = "form-section";
-            alertDiv.style.textAlign = "center";
-            alertDiv.style.padding = "40px 20px";
-            alertDiv.innerHTML = `
-                <h2 style="color: #e74c3c; font-family: var(--font-title);">🔒 Recrutement Actuellement Fermé</h2>
-                <p style="margin-top: 15px;">Désolé, les sessions de candidature pour cette catégorie sont closes pour le moment.</p>
-                <p>Restez à l'affût des annonces officielles sur le Discord pour la prochaine vague !</p>
-                <a href="index.html" class="btn" style="display:inline-block; margin-top:20px;">Retour à l'accueil</a>
+        const badgeStaff = document.getElementById('badge-staff');
+        const actionStaff = document.getElementById('action-staff');
+        const btnToggleStaff = document.getElementById('toggle-staff-btn');
+
+        const badgeGestion = document.getElementById('badge-gestion');
+        const actionGestion = document.getElementById('action-gestion');
+        const btnToggleGestion = document.getElementById('toggle-gestion-btn');
+
+        // ---- CARTE STAFF ----
+        if (badgeStaff && actionStaff) {
+            if (staffEstOuvert) {
+                badgeStaff.className = "badge open";
+                badgeStaff.innerText = "Ouvert";
+                actionStaff.innerHTML = `<a href="staff.html" class="btn btn-primary">Entrer dans le Staff</a>`;
+            } else {
+                badgeStaff.className = "badge closed";
+                badgeStaff.innerText = "Clos";
+                actionStaff.innerHTML = `<button class="btn btn-disabled" disabled>Portails Fermés</button>`;
+            }
+        }
+        if (btnToggleStaff) {
+            btnToggleStaff.innerText = staffEstOuvert ? "🔮 FERMER LE STAFF" : "✨ OUVRIR LE STAFF";
+            btnToggleStaff.style.background = staffEstOuvert ? "#c0392b" : "#27ae60";
+        }
+
+        // ---- CARTE GESTION ----
+        if (badgeGestion && actionGestion) {
+            if (gestionEstOuvert) {
+                badgeGestion.className = "badge open";
+                badgeGestion.innerText = "Ouvert";
+                actionGestion.innerHTML = `<a href="gestion.html" class="btn btn-primary">Entrer dans la Gestion</a>`;
+            } else {
+                badgeGestion.className = "badge closed";
+                badgeGestion.innerText = "Clos";
+                actionGestion.innerHTML = `<button class="btn btn-disabled" disabled>Portails Fermés</button>`;
+            }
+        }
+        if (btnToggleGestion) {
+            btnToggleGestion.innerText = gestionEstOuvert ? "🔮 FERMER LA GESTION" : "✨ OUVRIR LA GESTION";
+            btnToggleGestion.style.background = gestionEstOuvert ? "#c0392b" : "#27ae60";
+        }
+    }
+
+    // ACTIONS CLIC INTERRUPTEURS ARAXIA avec protection
+    const toggleStaff = document.getElementById('toggle-staff-btn');
+    if (toggleStaff) {
+        toggleStaff.addEventListener('click', function () {
+            // Protection simple : demander le pseudo d'Araxia
+            const userInput = prompt("🔐 Code d'accès administrateur ?");
+            if (userInput === ".araxia." || userInput === "araxia") {
+                const actuel = localStorage.getItem('session_staff_open') === 'true';
+                localStorage.setItem('session_staff_open', (!actuel).toString());
+                rafraichirTouteLaPageIndex();
+                // Feedback visuel
+                this.style.animation = 'pulse 0.6s';
+                setTimeout(() => this.style.animation = '', 600);
+            } else if (userInput !== null) {
+                alert("❌ Accès refusé. Les astres ne sont pas alignés pour toi.");
+            }
+        });
+    }
+
+    const toggleGestion = document.getElementById('toggle-gestion-btn');
+    if (toggleGestion) {
+        toggleGestion.addEventListener('click', function () {
+            const userInput = prompt("🔐 Code d'accès administrateur ?");
+            if (userInput === ".araxia." || userInput === "araxia") {
+                const actuel = localStorage.getItem('session_gestion_open') === 'true';
+                localStorage.setItem('session_gestion_open', (!actuel).toString());
+                rafraichirTouteLaPageIndex();
+                // Feedback visuel
+                this.style.animation = 'pulse 0.6s';
+                setTimeout(() => this.style.animation = '', 600);
+            } else if (userInput !== null) {
+                alert("❌ Accès refusé. Les astres ne sont pas alignés pour toi.");
+            }
+        });
+    }
+
+    rafraichirTouteLaPageIndex();
+
+    // ==========================================
+    // SECURITE DE VERROUILLAGE DES PAGES FORMULAIRES
+    // ==========================================
+    function verifierVerrouLocal(cleStockage, idFormulaire, nomAffichage) {
+        const formulaire = document.getElementById(idFormulaire);
+        if (!formulaire) return;
+
+        const estOuvert = localStorage.getItem(cleStockage) === 'true';
+        if (!estOuvert) {
+            const sectionAlerte = document.createElement('div');
+            sectionAlerte.className = "admin-glow-box";
+            sectionAlerte.style.textAlign = "center";
+            sectionAlerte.style.borderColor = "var(--closed-color)";
+            sectionAlerte.style.marginBottom = "20px";
+            sectionAlerte.innerHTML = `
+                <h2 style="color: var(--closed-color); font-family: var(--font-title); font-size: 1.8rem; margin-bottom: 15px;">🔒 Session Interrompue</h2>
+                <p>Le recrutement pour le pôle <strong>${nomAffichage}</strong> est actuellement verrouillé.</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Les astres ne sont pas alignés. Repassez lorsque les fondateurs auront ouvert les vagues.</p>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                    <a href="index.html" class="btn btn-primary" style="display: inline-block; width: auto; padding: 10px 30px;">Retour au Sanctuaire</a>
+                </div>
             `;
-            formElement.parentNode.insertBefore(alertDiv, formElement);
-            formElement.style.display = "none"; // On cache le formulaire secret
+            formulaire.parentNode.insertBefore(sectionAlerte, formulaire);
+            formulaire.style.display = "none";
         }
     }
 
-    // Application des verrous selon la page courante
-    verifierVerrouillageFormulaire('staff', 'staffForm');
-    verifierVerrouillageFormulaire('haut-rang', 'hautRangForm');
-    verifierVerrouillageFormulaire('gestion', 'gestionForm');
-
+    verifierVerrouLocal('session_staff_open', 'staffForm', 'Staff');
+    verifierVerrouLocal('session_gestion_open', 'gestionForm', 'Gestion');
 
     // ==========================================
-    // 2. SYSTÈME DE SAUVEGARDE AUTOMATIQUE (BROUILLONS)
-    // ==========================================
-    function gererBrouillonFormulaire(idFormulaire, stockageKey) {
-        const form = document.getElementById(idFormulaire);
-        if (!form) return;
-
-        // Étape A : Recharger le brouillon existant au chargement de la page
-        const brouillonSauvegarde = localStorage.getItem(stockageKey);
-        if (brouillonSauvegarde) {
-            try {
-                const donnees = JSON.parse(brouillonSauvegarde);
-                Object.keys(donnees).forEach(name => {
-                    const champs = form.querySelectorAll(`[name="${name}"]`);
-                    champs.forEach(champ => {
-                        if (champ.type === 'checkbox' || champ.type === 'radio') {
-                            if (Array.isArray(donnees[name])) {
-                                champ.checked = donnees[name].includes(champ.value);
-                            } else {
-                                champ.checked = (champ.value === donnees[name]);
-                            }
-                            // Déclencher manuellement l'événement change pour forcer les blocs dynamiques à s'ouvrir !
-                            champ.dispatchEvent(new Event('change'));
-                        } else {
-                            champ.value = donnees[name];
-                            if(champ.tagName === 'SELECT') {
-                                champ.dispatchEvent(new Event('change'));
-                            }
-                        }
-                    });
-                });
-            } catch (e) { console.error("Erreur de chargement du brouillon", e); }
-        }
-
-        // Étape B : Écouter chaque frappe de clavier ou clic pour sauvegarder en temps réel
-        form.addEventListener('input', sauvegarderDonnees);
-        form.addEventListener('change', sauvegarderDonnees);
-
-        function sauvegarderDonnees() {
-            const formData = new FormData(form);
-            const objetBrouillon = {};
-            
-            formData.forEach((value, key) => {
-                // Gestion spécifique des cases à cocher multiples (comme les rôles staff)
-                if (form.querySelectorAll(`[name="${key}"]`).length > 1 && !key.includes('accept')) {
-                    if (!objetBrouillon[key]) objetBrouillon[key] = [];
-                    objetBrouillon[key].push(value);
-                } else {
-                    objetBrouillon[key] = value;
-                }
-            });
-            localStorage.setItem(stockageKey, JSON.stringify(objetBrouillon));
-        }
-    }
-
-    // Initialisation des brouillons par page
-    gererBrouillonFormulaire('staffForm', 'brouillon_staff');
-    gererBrouillonFormulaire('hautRangForm', 'brouillon_haut_rang');
-    gererBrouillonFormulaire('gestionForm', 'brouillon_gestion');
-
-
-    // ==========================================
-    // 3. LOGIQUE DYNAMIQUE DES ANCIENNES PAGES
+    // GESTION DES SECTIONS SPÉCIALISÉES (AFFICHER/MASQUER)
     // ==========================================
     
-    // Page Staff : Limite de cases cochées
-    const checkboxes = document.querySelectorAll('input[name="roles"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function () {
-            const checkedBoxes = document.querySelectorAll('input[name="roles"]:checked');
-            if (checkedBoxes.length > 2) {
+    // Staff - Gestion des rôles
+    const staffRoleCheckboxes = document.querySelectorAll('input[name="roles"]');
+    staffRoleCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const maxRoles = 2;
+            const checkedCount = document.querySelectorAll('input[name="roles"]:checked').length;
+            
+            if (checkedCount > maxRoles) {
                 this.checked = false;
-                alert("Rappel : Vous ne pouvez postuler que pour 2 rôles de spécialité maximum.");
+                alert(`⚠️ Vous ne pouvez sélectionner que ${maxRoles} rôles maximum.`);
                 return;
             }
 
-            const sectionId = `section-${this.value}`;
-            const targetSection = document.getElementById(sectionId);
-            if (targetSection) {
-                if (this.checked) {
-                    targetSection.style.display = 'block';
-                    targetSection.querySelectorAll('textarea, select').forEach(field => field.required = true);
-                } else {
-                    targetSection.style.display = 'none';
-                    targetSection.querySelectorAll('textarea, select').forEach(field => field.required = false);
+            // Afficher/masquer les sections spécialisées
+            const roles = ['helper', 'correcteur', 'geneticien', 'narrateur', 'pnj', 'veilleur', 'batisseur'];
+            roles.forEach(role => {
+                const section = document.getElementById(`section-${role}`);
+                if (section) {
+                    const shouldShow = document.querySelector(`input[name="roles"][value="${role}"]:checked`) !== null;
+                    section.style.display = shouldShow ? 'block' : 'none';
                 }
-            }
+            });
         });
     });
 
-    // Page Haut Rang : Liste déroulante
-    const rangViseSelect = document.getElementById('rang_vise');
-    if (rangViseSelect) {
-        rangViseSelect.addEventListener('change', function () {
-            document.querySelectorAll('.hr-specialized-section').forEach(section => {
-                section.style.display = 'none';
-                section.querySelectorAll('textarea').forEach(field => field.required = false);
+    // Gestion - Gestion du rôle visé
+    const gestionRoleSelect = document.getElementById('role_gestion_vise');
+    if (gestionRoleSelect) {
+        gestionRoleSelect.addEventListener('change', function() {
+            const roles = ['scribe', 'intendant', 'passeur'];
+            roles.forEach(role => {
+                const section = document.getElementById(`section-${role}`);
+                if (section) {
+                    section.style.display = (this.value === role.charAt(0).toUpperCase() + role.slice(1)) ? 'block' : 'none';
+                }
             });
-            const valeurNettoyee = this.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const sectionId = `section-${valeurNettoyee}`;
-            const targetSection = document.getElementById(sectionId);
-            if (targetSection) {
-                targetSection.style.display = 'block';
-                targetSection.querySelectorAll('textarea').forEach(field => field.required = true);
+        });
+    }
+
+    // Haut Rang - Gestion du rang visé
+    const hautRangSelect = document.getElementById('rang_vise');
+    if (hautRangSelect) {
+        hautRangSelect.addEventListener('change', function() {
+            const rangMap = {
+                'Chef': 'chef',
+                'Lieutenant': 'lieutenant',
+                'Guerisseur': 'guerisseur',
+                'Apprenti-Guerisseur': 'apprenti-guerisseur'
+            };
+            
+            Object.values(rangMap).forEach(rang => {
+                const section = document.getElementById(`section-${rang}`);
+                if (section) {
+                    section.style.display = 'none';
+                }
+            });
+
+            if (rangMap[this.value]) {
+                const sectionToShow = document.getElementById(`section-${rangMap[this.value]}`);
+                if (sectionToShow) {
+                    sectionToShow.style.display = 'block';
+                }
             }
         });
     }
 
-    // Page Gestion : Liste déroulante
-    const roleGestionSelect = document.getElementById('role_gestion_vise');
-    if (roleGestionSelect) {
-        roleGestionSelect.addEventListener('change', function () {
-            document.querySelectorAll('.gest-specialized-section').forEach(section => {
-                section.style.display = 'none';
-                section.querySelectorAll('textarea, select').forEach(field => field.required = false);
-            });
-            const valeurNettoyee = this.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const sectionId = `section-${valeurNettoyee}`;
-            const targetSection = document.getElementById(sectionId);
-            if (targetSection) {
-                targetSection.style.display = 'block';
-                targetSection.querySelectorAll('textarea, select').forEach(field => field.required = true);
+    // ==========================================
+    // GESTION DES WEBHOOKS ET ENVOI DISCORD
+    // ==========================================
+
+    /**
+     * Valide les champs obligatoires d'un formulaire
+     */
+    function validerFormulaire(form) {
+        const errors = [];
+        
+        // Vérifier tous les champs required
+        const requiredFields = form.querySelectorAll('[required]');
+        requiredFields.forEach(field => {
+            if (field.type === 'checkbox') {
+                if (!field.checked) {
+                    errors.push(`⚠️ ${field.closest('label').textContent.trim()}`);
+                }
+            } else if (!field.value.trim()) {
+                const label = form.querySelector(`label[for="${field.id}"]`);
+                const labelText = label ? label.textContent.replace(' *', '') : field.name;
+                errors.push(`⚠️ ${labelText} est obligatoire`);
             }
         });
+
+        return errors;
     }
 
-
-    // ==========================================
-    // 4. ÉCOUTEURS DE SOUMISSION ET ENVOIS
-    // ==========================================
-    
-    // Soumission Staff
-    const staffForm = document.getElementById('staffForm');
-    if (staffForm) {
-        const feedback = document.getElementById('formFeedback');
-        const submitBtn = document.getElementById('submitBtn');
-        staffForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            feedback.className = "feedback-message text-info";
-            feedback.innerText = "Le Clan des Étoiles transmet votre message... Patientez...";
-            submitBtn.disabled = true;
-
-            const formData = new FormData(staffForm);
-            const object = { formType: "staff" };
-            const roles = [];
-            formData.forEach((value, key) => {
-                if (key === "roles") roles.push(value);
-                else object[key] = value;
-            });
-            object["roles"] = roles;
-
-            enoyerVersGoogleSheets(object, feedback, submitBtn, 'brouillon_staff');
-        });
+    /**
+     * Affiche les erreurs de validation
+     */
+    function afficherErreurs(errors, feedbackEl) {
+        feedbackEl.className = 'feedback-message text-error';
+        feedbackEl.innerHTML = '<strong>❌ Veuillez corriger les erreurs :</strong><ul style="margin: 10px 0; text-align: left;">' + 
+                                errors.map(e => `<li>${e}</li>`).join('') + 
+                                '</ul>';
+        feedbackEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    // Soumission Haut Rang
-    const hrForm = document.getElementById('hautRangForm');
-    if (hrForm) {
-        const hrFeedback = document.getElementById('hrFormFeedback');
-        const hrSubmitBtn = document.getElementById('hrSubmitBtn');
-        hrForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            hrFeedback.className = "feedback-message text-info";
-            hrFeedback.innerText = "Vos ancêtres étudient votre requête... Patientez...";
-            hrSubmitBtn.disabled = true;
-
-            const formData = new FormData(hrForm);
-            const object = { formType: "haut-rang" };
-            formData.forEach((value, key) => object[key] = value);
-
-            enoyerVersGoogleSheets(object, hrFeedback, hrSubmitBtn, 'brouillon_haut_rang');
-        });
-    }
-
-    // Soumission Gestion
-    const gestionForm = document.getElementById('gestionForm');
-    if (gestionForm) {
-        const gestFeedback = document.getElementById('gestFormFeedback');
-        const gestSubmitBtn = document.getElementById('gestSubmitBtn');
-        gestionForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            gestFeedback.className = "feedback-message text-info";
-            gestFeedback.innerText = "Le registre de gestion met à jour ses données... Patientez...";
-            gestSubmitBtn.disabled = true;
-
-            const formData = new FormData(gestionForm);
-            const object = { formType: "gestion" };
-            formData.forEach((value, key) => object[key] = value);
-
-            enoyerVersGoogleSheets(object, gestFeedback, gestSubmitBtn, 'brouillon_gestion');
+    /**
+     * Demande une confirmation avant envoi
+     */
+    function demanderConfirmation(pseudo, titre) {
+        return new Promise((resolve) => {
+            const confirmed = confirm(`✋ Confirmez-vous l'envoi de votre candidature ?\n\nPseudo: ${pseudo}\n\n(Cette action ne peut pas être annulée)`);
+            resolve(confirmed);
         });
     }
 
     // ==========================================
-    // FONCTION COMMUNE D'ENVOI (FETCH)
+    // GESTION DES WEBHOOKS ET ENVOI DISCORD
     // ==========================================
-    function enoyerVersGoogleSheets(donneesFormulaire, elementFeedback, boutonSubmit, cleBrouillonNettoyage) {
-        if (GOOGLE_APP_SCRIPT_URL === "METS_TON_URL_SCRIPT_ICI" || GOOGLE_APP_SCRIPT_URL === "") {
-            elementFeedback.className = "feedback-message text-error";
-            elementFeedback.innerText = "Erreur configuration : L'URL Google Apps Script est manquante.";
-            boutonSubmit.disabled = false;
-            return;
+
+    /**
+     * Divise un message long en plusieurs embeds (max 4096 chars par embed)
+     */
+    function diviserEnEmbeds(fields, couleur = 0xDFB15B) {
+        const embeds = [];
+        let currentEmbed = {
+            color: couleur,
+            fields: []
+        };
+        let currentLength = 0;
+
+        fields.forEach(field => {
+            const fieldLength = (field.name || '').length + (field.value || '').length + 50;
+            
+            if (currentLength + fieldLength > 4096) {
+                embeds.push(currentEmbed);
+                currentEmbed = { color: couleur, fields: [] };
+                currentLength = 0;
+            }
+            
+            currentEmbed.fields.push(field);
+            currentLength += fieldLength;
+        });
+
+        if (currentEmbed.fields.length > 0) {
+            embeds.push(currentEmbed);
         }
 
-        fetch(GOOGLE_APP_SCRIPT_URL, {
-            method: "POST",
-            mode: "no-cors",
-            cache: "no-cache",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(donneesFormulaire)
-        })
-        .then(() => {
-            elementFeedback.className = "feedback-message text-success";
-            elementFeedback.innerText = "✨ Candidature envoyée avec succès ! Merci de votre investissement.";
-            
-            // Suppression du brouillon puisque l'envoi a réussi !
-            localStorage.removeItem(cleBrouillonNettoyage);
+        return embeds;
+    }
 
-            const formForm = elementFeedback.closest('form');
-            if(formForm) formForm.reset();
+    /**
+     * Envoie les données du formulaire via webhook Discord
+     */
+    async function envoyerViaWebhook(formData, webhookUrl, titre, couleur = 0xDFB15B) {
+        try {
+            const fields = [];
+
+            for (const [key, value] of Object.entries(formData)) {
+                if (!value || value === '') continue;
+
+                const label = questionLabels[key] || key;
+                
+                // Limiter la longueur des valeurs pour Discord
+                let displayValue = String(value);
+                if (displayValue.length > 1024) {
+                    displayValue = displayValue.substring(0, 1020) + '...';
+                }
+
+                fields.push({
+                    name: label,
+                    value: displayValue || '*(Non rempli)*',
+                    inline: false
+                });
+            }
+
+            // Créer les embeds (gérés automatiquement pour les longs contenus)
+            const embeds = diviserEnEmbeds(fields, couleur);
             
-            document.querySelectorAll('.hr-specialized-section, .gest-specialized-section, .specialized-section').forEach(s => s.style.display = 'none');
-            boutonSubmit.disabled = false;
-        })
-        .catch(error => {
-            console.error("Erreur d'envoi :", error);
-            elementFeedback.className = "feedback-message text-error";
-            elementFeedback.innerText = "❌ Une erreur est survenue lors de l'envoi. Veuillez réessayer.";
-            boutonSubmit.disabled = false;
+            // Ajouter un titre au premier embed
+            if (embeds.length > 0) {
+                embeds[0] = {
+                    ...embeds[0],
+                    title: `📋 ${titre}`,
+                    timestamp: new Date().toISOString()
+                };
+            }
+
+            // Ajouter des numérotations si plusieurs embeds
+            if (embeds.length > 1) {
+                embeds.forEach((embed, index) => {
+                    embed.footer = {
+                        text: `Page ${index + 1}/${embeds.length}`
+                    };
+                });
+            }
+
+            // Envoyer chaque embed
+            for (const embed of embeds) {
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ embeds: [embed] })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur Discord: ${response.statusText}`);
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi:', error);
+            throw error;
+        }
+    }
+
+    // ==========================================
+    // GESTION DES FORMULAIRES
+    // ==========================================
+
+    // --- FORMULAIRE STAFF ---
+    const staffForm = document.getElementById('staffForm');
+    if (staffForm) {
+        staffForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const feedbackEl = document.getElementById('formFeedback');
+            
+            // Validation
+            const errors = validerFormulaire(this);
+            if (errors.length > 0) {
+                afficherErreurs(errors, feedbackEl);
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Demander confirmation
+            const pseudoField = this.querySelector('input[name="pseudo"]');
+            const pseudo = pseudoField ? pseudoField.value : 'Candidat';
+            const confirmed = await demanderConfirmation(pseudo, 'Candidature Staff');
+            
+            if (!confirmed) {
+                feedbackEl.className = 'feedback-message text-error';
+                feedbackEl.textContent = '❌ Candidature annulée.';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            feedbackEl.className = 'feedback-message';
+            feedbackEl.textContent = '⏳ Envoi en cours...';
+
+            try {
+                const formData = new FormData(this);
+                const data = {};
+
+                // Collecter les données
+                for (const [key, value] of formData.entries()) {
+                    if (key === 'roles') {
+                        // Gérer les rôles multiples
+                        if (!data.roles) data.roles = [];
+                        data.roles.push(value);
+                    } else if (key !== 'accept_rules' && key !== 'accept_sincerity') {
+                        data[key] = value;
+                    } else {
+                        data[key] = value;
+                    }
+                }
+
+                // Convertir array roles en string
+                if (Array.isArray(data.roles)) {
+                    data.roles = data.roles.join(', ');
+                }
+
+                // Envoyer à Discord
+                await envoyerViaWebhook(data, DISCORD_WEBHOOK_STAFF, 'Candidature Staff', 0xDFB15B);
+
+                feedbackEl.className = 'feedback-message text-success';
+                feedbackEl.textContent = '✅ Candidature envoyée avec succès ! Merci de votre intérêt.';
+                staffForm.reset();
+
+            } catch (error) {
+                feedbackEl.className = 'feedback-message text-error';
+                feedbackEl.textContent = `❌ Erreur: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+            }
         });
     }
+
+    // --- FORMULAIRE GESTION ---
+    const gestionForm = document.getElementById('gestionForm');
+    if (gestionForm) {
+        gestionForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('gestSubmitBtn');
+            const feedbackEl = document.getElementById('gestFormFeedback');
+            
+            // Validation
+            const errors = validerFormulaire(this);
+            if (errors.length > 0) {
+                afficherErreurs(errors, feedbackEl);
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Demander confirmation
+            const pseudoField = this.querySelector('input[name="gest_pseudo"]');
+            const pseudo = pseudoField ? pseudoField.value : 'Candidat';
+            const confirmed = await demanderConfirmation(pseudo, 'Candidature Gestion');
+            
+            if (!confirmed) {
+                feedbackEl.className = 'feedback-message text-error';
+                feedbackEl.textContent = '❌ Candidature annulée.';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            feedbackEl.className = 'feedback-message';
+            feedbackEl.textContent = '⏳ Envoi en cours...';
+
+            try {
+                const formData = new FormData(this);
+                const data = {};
+
+                for (const [key, value] of formData.entries()) {
+                    data[key] = value;
+                }
+
+                await envoyerViaWebhook(data, DISCORD_WEBHOOK_GESTION, 'Candidature Gestion', 0xDFB15B);
+
+                feedbackEl.className = 'feedback-message text-success';
+                feedbackEl.textContent = '✅ Candidature envoyée avec succès !';
+                gestionForm.reset();
+
+            } catch (error) {
+                feedbackEl.className = 'feedback-message text-error';
+                feedbackEl.textContent = `❌ Erreur: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    }
+
+    // --- FORMULAIRE HAUT RANG ---
+    const hautRangForm = document.getElementById('hautRangForm');
+    if (hautRangForm) {
+        hautRangForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('hrSubmitBtn');
+            const feedbackEl = document.getElementById('hrFormFeedback');
+            
+            // Validation
+            const errors = validerFormulaire(this);
+            if (errors.length > 0) {
+                afficherErreurs(errors, feedbackEl);
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Demander confirmation
+            const pseudoField = this.querySelector('input[name="hr_pseudo"]');
+            const pseudo = pseudoField ? pseudoField.value : 'Candidat';
+            const confirmed = await demanderConfirmation(pseudo, 'Candidature Haut Rang');
+            
+            if (!confirmed) {
+                feedbackEl.className = 'feedback-message text-error';
+                feedbackEl.textContent = '❌ Candidature annulée.';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            feedbackEl.className = 'feedback-message';
+            feedbackEl.textContent = '⏳ Envoi en cours...';
+
+            try {
+                const formData = new FormData(this);
+                const data = {};
+
+                for (const [key, value] of formData.entries()) {
+                    data[key] = value;
+                }
+
+                await envoyerViaWebhook(data, DISCORD_WEBHOOK_HAUT_RANG, 'Candidature Haut Rang', 0xDFB15B);
+
+                feedbackEl.className = 'feedback-message text-success';
+                feedbackEl.textContent = '✅ Dossier envoyé avec succès ! Bonne chance !';
+                hautRangForm.reset();
+
+            } catch (error) {
+                feedbackEl.className = 'feedback-message text-error';
+                feedbackEl.textContent = `❌ Erreur: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Auto-sauvegarder les brouillons
+    setInterval(() => {
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            localStorage.setItem(`draft_${form.id}`, JSON.stringify(data));
+        });
+    }, 30000); // Chaque 30 secondes
+
+    // Restaurer les brouillons au chargement
+    document.querySelectorAll('form').forEach(form => {
+        const draft = localStorage.getItem(`draft_${form.id}`);
+        if (draft) {
+            const data = JSON.parse(draft);
+            Object.keys(data).forEach(key => {
+                const field = form.querySelector(`[name="${key}"]`);
+                if (field) field.value = data[key];
+            });
+        }
+    });
+}
 });
