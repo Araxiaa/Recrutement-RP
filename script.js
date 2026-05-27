@@ -423,7 +423,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const fields = [];
 
             for (const [key, value] of Object.entries(formData)) {
-                if (!value || value === '') continue;
+                if (!value || String(value).trim() === '') continue;
 
                 const label = questionLabels[key] || key;
                 
@@ -433,9 +433,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     displayValue = displayValue.substring(0, 1020) + '...';
                 }
 
+                const safeValue = displayValue && displayValue.trim() !== '' ? displayValue : '*(Non rempli)*';
+                const safeName  = label && label.trim() !== '' ? label.substring(0, 256) : 'Champ';
+
                 fields.push({
-                    name: label,
-                    value: displayValue || '*(Non rempli)*',
+                    name: safeName,
+                    value: safeValue.substring(0, 1024),
                     inline: false
                 });
             }
