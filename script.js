@@ -1,11 +1,25 @@
 document.addEventListener("DOMContentLoaded", function () {
     
-    // ==========================================
-    // CONFIGURATION DES WEBHOOKS DISCORD
-    // ==========================================
-    const DISCORD_WEBHOOK_STAFF = "https://discord.com/api/webhooks/1509242254567673989/waPgtJzIlHqB48ZFa3xA3Tz0RC2HRbJknIGY-Akf-L9LU4cGVm5jloBF-BM7AEshSFdl";
-    const DISCORD_WEBHOOK_HAUT_RANG = "https://discord.com/api/webhooks/1509242254567673989/waPgtJzIlHqB48ZFa3xA3Tz0RC2HRbJknIGY-Akf-L9LU4cGVm5jloBF-BM7AEshSFdl";
-    const DISCORD_WEBHOOK_GESTION = "https://discord.com/api/webhooks/1509242254567673989/waPgtJzIlHqB48ZFa3xA3Tz0RC2HRbJknIGY-Akf-L9LU4cGVm5jloBF-BM7AEshSFdl";
+    const FORMSPREE_STAFF     = "https://formspree.io/f/xjgzjovl";
+const FORMSPREE_HAUT_RANG = "https://formspree.io/f/mnjrlzql";
+const FORMSPREE_GESTION   = "https://formspree.io/f/maqkabyz";
+
+async function envoyerViaWebhook(formData, formspreeUrl, titre, couleur) {
+    const response = await fetch(formspreeUrl, {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        body: JSON.stringify(formData)
+    });
+
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(`Formspree: ${err.error || response.status}`);
+    }
+    return true;
+}
 
     // ==========================================
     // DICTIONNAIRE DE TRADUCTION DES QUESTIONS
@@ -416,73 +430,45 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
-     * Envoie les données du formulaire via webhook Discord
-     */
-    async function envoyerViaWebhook(formData, webhookUrl, titre, couleur = 0xDFB15B) {
-        try {
-            const fields = [];
+ * Envoie les données du formulaire proprement à Formspree ou FormSubmit
+ */
+async function envoyerViaWebhook(formData, externalServiceUrl, titre) {
+    try {
+        const dataToSend = {};
 
-            for (const [key, value] of Object.entries(formData)) {
-                if (!value || String(value).trim() === '') continue;
+        // On traduit les clés techniques en beaux labels lisibles dans tes e-mails
+        for (const [key, value] of Object.entries(formData)) {
+            if (!value || String(value).trim() === '') continue;
 
-                const label = questionLabels[key] || key;
-                
-                // Limiter la longueur des valeurs pour Discord
-                let displayValue = String(value);
-                if (displayValue.length > 1024) {
-                    displayValue = displayValue.substring(0, 1020) + '...';
-                }
-
-                const safeValue = displayValue && displayValue.trim() !== '' ? displayValue : '*(Non rempli)*';
-                const safeName  = label && label.trim() !== '' ? label.substring(0, 256) : 'Champ';
-
-                fields.push({
-                    name: safeName,
-                    value: safeValue.substring(0, 1024),
-                    inline: false
-                });
-            }
-
-            // Créer les embeds (gérés automatiquement pour les longs contenus)
-            const embeds = diviserEnEmbeds(fields, couleur);
-            
-            // Ajouter un titre au premier embed
-            if (embeds.length > 0) {
-                embeds[0] = {
-                    ...embeds[0],
-                    title: `📋 ${titre}`,
-                    timestamp: new Date().toISOString()
-                };
-            }
-
-            // Ajouter des numérotations si plusieurs embeds
-            if (embeds.length > 1) {
-                embeds.forEach((embed, index) => {
-                    embed.footer = {
-                        text: `Page ${index + 1}/${embeds.length}`
-                    };
-                });
-            }
-
-            // Envoyer chaque embed
-            for (const embed of embeds) {
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ embeds: [embed] })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Erreur Discord: ${response.status} ${response.statusText || '(pas de détails)'}`);
-                }
-            }
-
-            return true;
-        } catch (error) {
-            console.error('Erreur lors de l\'envoi:', error);
-            throw error;
+            const label = questionLabels[key] || key;
+            dataToSend[label] = value;
         }
+
+        // On ajoute un titre au tableau pour savoir de quel formulaire ça vient
+        dataToSend["Type de Formulaire"] = titre;
+        dataToSend["Date d'envoi"] = new Date().toLocaleString("fr-FR");
+
+        // Envoi de la requête au site externe
+        const response = await fetch(externalServiceUrl, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(dataToSend)
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || `Erreur serveur: ${response.status}`);
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de l\'envoi externe:', error);
+        throw error;
     }
+}
 
     // ==========================================
     // GESTION DES FORMULAIRES
@@ -543,7 +529,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 // Envoyer à Discord
-                await envoyerViaWebhook(data, DISCORD_WEBHOOK_STAFF, 'Candidature Staff', 0xDFB15B);
+                await envoyerViaWebhook(data, FORMSPREE_STAFF, 'Candidature Staff');
 
                 feedbackEl.className = 'feedback-message text-success';
                 feedbackEl.textContent = '✅ Candidature envoyée avec succès ! Merci de votre intérêt.';
@@ -598,7 +584,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     data[key] = value;
                 }
 
-                await envoyerViaWebhook(data, DISCORD_WEBHOOK_GESTION, 'Candidature Gestion', 0xDFB15B);
+                await envoyerViaWebhook(data, FORMSPREE_GESTION, 'Candidature Gestion');
 
                 feedbackEl.className = 'feedback-message text-success';
                 feedbackEl.textContent = '✅ Candidature envoyée avec succès !';
@@ -653,7 +639,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     data[key] = value;
                 }
 
-                await envoyerViaWebhook(data, DISCORD_WEBHOOK_HAUT_RANG, 'Candidature Haut Rang', 0xDFB15B);
+                await envoyerViaWebhook(data, FORMSPREE_HAUT_RANG, 'Candidature Haut Rang');
 
                 feedbackEl.className = 'feedback-message text-success';
                 feedbackEl.textContent = '✅ Dossier envoyé avec succès ! Bonne chance !';
